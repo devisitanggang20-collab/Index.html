@@ -1,0 +1,497 @@
+# Making-Project
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart City IoT & Big Data Dashboard - Informatika SMA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas {
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+        }
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.2); }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-6">
+
+    <!-- Header -->
+    <header class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center bg-slate-800/80 border border-slate-700 p-4 rounded-xl mb-6 gap-4">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-emerald-400 pulse-dot"></span>
+                <h1 class="text-xl md:text-2xl font-bold text-white tracking-wide">SMART CITY IoT & BIG DATA LAB</h1>
+            </div>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">Simulasi Sensor IoT, Cloud Computing, dan Analisis Data Real-Time • Informatika SMA</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="bg-slate-900 px-4 py-2 rounded-lg border border-slate-700 text-center">
+                <span class="text-xs text-slate-400 block">Skor Misi</span>
+                <span id="scoreDisplay" class="text-lg font-bold text-amber-400">0 / 300</span>
+            </div>
+            <button onclick="resetSimulation()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-4 py-2.5 rounded-lg font-medium transition">
+                Reset Simulasi
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Kolom Kiri: Peta Kota & Arus Data Cloud (7 Kolom) -->
+        <div class="lg:col-span-7 flex flex-col gap-6">
+            <div class="bg-slate-800/60 border border-slate-700 p-4 rounded-xl">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="font-semibold text-sky-400 flex items-center gap-2">
+                        <span>📡</span> Topologi Kota & Transmisi Data ke Cloud
+                    </h2>
+                    <span id="cloudStatus" class="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-full">
+                        Cloud Server: Online (12ms)
+                    </span>
+                </div>
+                <canvas id="cityCanvas" width="680" height="360" class="w-full h-auto"></canvas>
+                <div class="grid grid-cols-3 gap-2 mt-3 text-xs text-slate-400">
+                    <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span> Paket Data Sensor</div>
+                    <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Perintah Aktuator</div>
+                    <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Anomali / Peringatan</div>
+                </div>
+            </div>
+
+            <!-- Grafik Big Data Real-Time -->
+            <div class="bg-slate-800/60 border border-slate-700 p-4 rounded-xl">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="font-semibold text-purple-400">📊 Big Data Stream (Volume & Anomali Data)</h2>
+                    <span id="dataRateText" class="text-xs font-mono text-slate-300">Throughput: 0 MB/s</span>
+                </div>
+                <canvas id="chartCanvas" width="680" height="140" class="w-full h-auto"></canvas>
+                <div id="anomalyBanner" class="mt-3 p-2.5 rounded-lg bg-slate-900/90 border border-slate-700 text-xs text-slate-300 flex items-center justify-between">
+                    <span>Status Sistem: Menunggu aktivasi sensor IoT...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kolom Kanan: Panel Kontrol Sensor, Otomatisasi & Misi (5 Kolom) -->
+        <div class="lg:col-span-5 flex flex-col gap-6">
+            
+            <!-- Panel Misi HOTS -->
+            <div class="bg-gradient-to-br from-indigo-900/50 to-slate-800 border border-indigo-500/40 p-4 rounded-xl">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded">Studi Kasus Aktif</span>
+                    <span id="missionStep" class="text-xs text-slate-300">Misi 1 dari 3</span>
+                </div>
+                <h3 id="missionTitle" class="font-bold text-white text-base mb-1">1. Kemacetan Jam Sibuk</h3>
+                <p id="missionDesc" class="text-xs text-slate-300 leading-relaxed mb-3">
+                    Kepadatan kendaraan meningkat drastis di persimpangan utama. Aktifkan <b>Sensor Lalu Lintas</b> dan atur batas otomatisasi lampu hijau cerdas di bawah angka <b>70%</b> agar kemacetan terurai!
+                </p>
+                <div id="missionFeedback" class="text-xs font-medium text-amber-300">
+                    Status: Belum terpenuhi
+                </div>
+            </div>
+
+            <!-- Panel Kontrol Perangkat IoT -->
+            <div class="bg-slate-800/60 border border-slate-700 p-4 rounded-xl flex flex-col gap-4">
+                <h2 class="font-semibold text-emerald-400 border-b border-slate-700 pb-2">⚙️ Konfigurasi Node Sensor & Aktuator</h2>
+
+                <!-- Sensor 1: Lalu Lintas -->
+                <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700">
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <span class="font-semibold text-sm text-white">🚗 Sensor Kepadatan Lalu Lintas</span>
+                            <span class="block text-xs text-slate-400">Data saat ini: <b id="trafficVal" class="text-rose-400">85%</b></span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="toggleTraffic" class="sr-only peer" onchange="updateSystem()">
+                            <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
+                        </label>
+                    </div>
+                    <div class="text-xs text-slate-300 mt-2">
+                        <label class="flex justify-between mb-1">
+                            <span>Aturan IF Kepadatan &gt; <b id="trafficThreshLabel" class="text-sky-400">80%</b> → Aktifkan Smart Traffic Light</span>
+                        </label>
+                        <input type="range" id="trafficThresh" min="30" max="95" value="80" class="w-full accent-sky-500" oninput="updateSystem()">
+                    </div>
+                </div>
+
+                <!-- Sensor 2: Kualitas Udara -->
+                <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700">
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <span class="font-semibold text-sm text-white">🌫️ Sensor Kualitas Udara (AQI)</span>
+                            <span class="block text-xs text-slate-400">Indeks Polusi: <b id="airVal" class="text-amber-400">165 AQI</b></span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="toggleAir" class="sr-only peer" onchange="updateSystem()">
+                            <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
+                    <div class="text-xs text-slate-300 mt-2">
+                        <label class="flex justify-between mb-1">
+                            <span>Aturan IF Polusi &gt; <b id="airThreshLabel" class="text-emerald-400">180 AQI</b> → Aktifkan Air Purifier Kota</span>
+                        </label>
+                        <input type="range" id="airThresh" min="50" max="200" value="180" class="w-full accent-emerald-500" oninput="updateSystem()">
+                    </div>
+                </div>
+
+                <!-- Sensor 3: Penerangan Jalan Otomatis -->
+                <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700">
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <span class="font-semibold text-sm text-white">💡 Sensor Cahaya & PJU Pintar</span>
+                            <span class="block text-xs text-slate-400">Intensitas Cahaya: <b id="lightVal" class="text-sky-400">25 Lux (Gelap)</b></span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="toggleLight" class="sr-only peer" onchange="updateSystem()">
+                            <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                        </label>
+                    </div>
+                    <div class="text-xs text-slate-300 mt-2">
+                        <label class="flex justify-between mb-1">
+                            <span>Aturan IF Cahaya &lt; <b id="lightThreshLabel" class="text-amber-400">20 Lux</b> → Nyalakan Lampu Jalan</span>
+                        </label>
+                        <input type="range" id="lightThresh" min="10" max="80" value="20" class="w-full accent-amber-500" oninput="updateSystem()">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const cityCanvas = document.getElementById('cityCanvas');
+        const ctx = cityCanvas.getContext('2d');
+        const chartCanvas = document.getElementById('chartCanvas');
+        const chartCtx = chartCanvas.getContext('2d');
+
+        // State Simulasi
+        let state = {
+            trafficActive: false,
+            airActive: false,
+            lightActive: false,
+            trafficLevel: 85,
+            airAQI: 165,
+            lightLux: 25,
+            trafficThresh: 80,
+            airThresh: 180,
+            lightThresh: 20,
+            packets: [],
+            cars: [],
+            dataHistory: Array(40).fill(15),
+            currentMission: 1,
+            score: 0
+        };
+
+        // Posisi Node pada Peta Kota
+        const nodes = {
+            cloud: { x: 340, y: 55, label: "CLOUD DATA CENTER" },
+            traffic: { x: 140, y: 240, label: "Sensor Lalu Lintas" },
+            air: { x: 340, y: 270, label: "Sensor Kualitas Udara" },
+            light: { x: 540, y: 240, label: "Sensor PJU Pintar" }
+        };
+
+        // Inisialisasi kendaraan animasi
+        for (let i = 0; i < 8; i++) {
+            state.cars.push({
+                x: Math.random() * 680,
+                y: i % 2 === 0 ? 168 : 184,
+                dir: i % 2 === 0 ? 1 : -1,
+                speed: 1.5 + Math.random()
+            });
+        }
+
+        function updateSystem() {
+            state.trafficActive = document.getElementById('toggleTraffic').checked;
+            state.airActive = document.getElementById('toggleAir').checked;
+            state.lightActive = document.getElementById('toggleLight').checked;
+
+            state.trafficThresh = parseInt(document.getElementById('trafficThresh').value);
+            state.airThresh = parseInt(document.getElementById('airThresh').value);
+            state.lightThresh = parseInt(document.getElementById('lightThresh').value);
+
+            document.getElementById('trafficThreshLabel').innerText = state.trafficThresh + "%";
+            document.getElementById('airThreshLabel').innerText = state.airThresh + " AQI";
+            document.getElementById('lightThreshLabel').innerText = state.lightThresh + " Lux";
+
+            // Evaluasi Aktuator berdasarkan Rule Engine
+            const trafficTriggered = state.trafficActive && (85 > state.trafficThresh);
+            const airTriggered = state.airActive && (165 > state.airThresh);
+            const lightTriggered = state.lightActive && (25 < state.lightThresh);
+
+            state.trafficLevel = trafficTriggered ? 42 : 85;
+            state.airAQI = airTriggered ? 58 : 165;
+
+            const trafficValEl = document.getElementById('trafficVal');
+            trafficValEl.innerText = state.trafficLevel + "%";
+            trafficValEl.className = trafficTriggered ? "text-emerald-400" : "text-rose-400";
+
+            const airValEl = document.getElementById('airVal');
+            airValEl.innerText = state.airAQI + " AQI";
+            airValEl.className = airTriggered ? "text-emerald-400" : "text-amber-400";
+
+            const lightValEl = document.getElementById('lightVal');
+            lightValEl.innerText = lightTriggered ? "25 Lux (Lampu Menyala)" : "25 Lux (Gelap)";
+            lightValEl.className = lightTriggered ? "text-emerald-400" : "text-sky-400";
+
+            checkMissions(trafficTriggered, airTriggered, lightTriggered);
+            updateAnomalyBanner(trafficTriggered, airTriggered, lightTriggered);
+        }
+
+        function updateAnomalyBanner(tTrig, aTrig, lTrig) {
+            const banner = document.getElementById('anomalyBanner');
+            const activeCount = [state.trafficActive, state.airActive, state.lightActive].filter(Boolean).length;
+
+            if (activeCount === 0) {
+                banner.innerHTML = `<span class="text-slate-400">Status Sistem: Tidak ada sensor yang terhubung ke Cloud.</span>`;
+                return;
+            }
+
+            if (!tTrig && state.trafficActive) {
+                banner.innerHTML = `<span class="text-rose-400 font-semibold">⚠️ ANOMALI DATA: Kepadatan lalu lintas (85%) melebihi batas aman, namun aturan IF belum memicu aktuator!</span>`;
+            } else if (!aTrig && state.airActive) {
+                banner.innerHTML = `<span class="text-amber-400 font-semibold">⚠️ ANOMALI DATA: Indeks polusi udara (165 AQI) tidak sehat! Turunkan ambang batas AQI.</span>`;
+            } else if (!lTrig && state.lightActive) {
+                banner.innerHTML = `<span class="text-sky-400 font-semibold">⚠️ PERINGATAN: Jalanan gelap (25 Lux), naikkan ambang batas Lux agar lampu menyala otomatis.</span>`;
+            } else {
+                banner.innerHTML = `<span class="text-emerald-400 font-semibold">✅ SISTEM OPTIMAL: Semua sensor aktif berjalan sesuai aturan otomatisasi Cloud.</span>`;
+            }
+        }
+
+        function checkMissions(tTrig, aTrig, lTrig) {
+            const titleEl = document.getElementById('missionTitle');
+            const descEl = document.getElementById('missionDesc');
+            const stepEl = document.getElementById('missionStep');
+            const feedEl = document.getElementById('missionFeedback');
+
+            if (state.currentMission === 1) {
+                if (tTrig) {
+                    state.score = 100;
+                    state.currentMission = 2;
+                    document.getElementById('scoreDisplay').innerText = `${state.score} / 300`;
+                    stepEl.innerText = "Misi 2 dari 3";
+                    titleEl.innerText = "2. Lonjakan Polusi Kawasan Industri";
+                    descEl.innerHTML = `Sensor mendeteksi polusi udara <b>165 AQI</b>. Aktifkan <b>Sensor Kualitas Udara</b> dan atur ambang batas agar <i>Air Purifier</i> menyala otomatis saat AQI di atas <b>120</b>!`;
+                    feedEl.innerText = "✅ Misi 1 Selesai (+100 Poin)! Lanjut ke Misi 2.";
+                    feedEl.className = "text-xs font-bold text-emerald-400";
+                }
+            } else if (state.currentMission === 2) {
+                if (aTrig && state.airThresh <= 120) {
+                    state.score = 200;
+                    state.currentMission = 3;
+                    document.getElementById('scoreDisplay').innerText = `${state.score} / 300`;
+                    stepEl.innerText = "Misi 3 dari 3";
+                    titleEl.innerText = "3. Efisiensi Penerangan Jalan Umum (PJU)";
+                    descEl.innerHTML = `Cuaca mendung menurunkan cahaya ke <b>25 Lux</b>. Aktifkan <b>Sensor PJU Pintar</b> dan atur agar lampu menyala otomatis saat cahaya di bawah <b>40 Lux</b>!`;
+                    feedEl.innerText = "✅ Misi 2 Selesai (+100 Poin)! Lanjut ke Misi Final.";
+                    feedEl.className = "text-xs font-bold text-emerald-400";
+                }
+            } else if (state.currentMission === 3) {
+                if (tTrig && aTrig && lTrig && state.lightThresh >= 40) {
+                    state.score = 300;
+                    document.getElementById('scoreDisplay').innerText = `300 / 300 🏆`;
+                    stepEl.innerText = "Selesai";
+                    titleEl.innerText = "🎉 Semua Misi Smart City Berhasil!";
+                    descEl.innerHTML = `Luar biasa! Seluruh jaringan sensor IoT, aturan otomatisasi <i>If-Then</i>, dan pemantauan Big Data kota berjalan optimal.`;
+                    feedEl.innerText = "🏆 Skor Maksimal Tercapai! Anda dapat bereksperimen bebas di Sandbox.";
+                    feedEl.className = "text-xs font-bold text-amber-300";
+                }
+            }
+        }
+
+        function spawnPackets() {
+            if (state.trafficActive && Math.random() < 0.08) {
+                state.packets.push({ from: nodes.traffic, to: nodes.cloud, progress: 0, color: '#38bdf8' });
+            }
+            if (state.airActive && Math.random() < 0.08) {
+                state.packets.push({ from: nodes.air, to: nodes.cloud, progress: 0, color: '#34d399' });
+            }
+            if (state.lightActive && Math.random() < 0.08) {
+                state.packets.push({ from: nodes.light, to: nodes.cloud, progress: 0, color: '#fbbf24' });
+            }
+        }
+
+        function drawCity() {
+            ctx.clearRect(0, 0, cityCanvas.width, cityCanvas.height);
+
+            // Gambar Jalan Raya
+            ctx.fillStyle = "#1e293b";
+            ctx.fillRect(0, 160, cityCanvas.width, 36);
+            ctx.strokeStyle = "#475569";
+            ctx.setLineDash([12, 12]);
+            ctx.beginPath();
+            ctx.moveTo(0, 178);
+            ctx.lineTo(cityCanvas.width, 178);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Efek Lampu Jalan Jika Aktif
+            const lightOn = state.lightActive && (25 < state.lightThresh);
+            if (lightOn) {
+                [120, 340, 560].forEach(lx => {
+                    const grad = ctx.createRadialGradient(lx, 165, 2, lx, 165, 45);
+                    grad.addColorStop(0, "rgba(251, 191, 36, 0.45)");
+                    grad.addColorStop(1, "rgba(251, 191, 36, 0)");
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(lx, 165, 45, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+
+            // Animasi Kendaraan
+            const speedFactor = (state.trafficActive && 85 > state.trafficThresh) ? 1.4 : 0.35;
+            state.cars.forEach(car => {
+                car.x += car.speed * car.dir * speedFactor;
+                if (car.x > cityCanvas.width + 20) car.x = -20;
+                if (car.x < -20) car.x = cityCanvas.width + 20;
+
+                ctx.fillStyle = car.dir === 1 ? "#38bdf8" : "#f43f5e";
+                ctx.fillRect(car.x, car.y, 16, 8);
+            });
+
+            // Garis Koneksi ke Cloud
+            Object.entries(nodes).forEach(([key, node]) => {
+                if (key === 'cloud') return;
+                const isActive = (key === 'traffic' && state.trafficActive) ||
+                                 (key === 'air' && state.airActive) ||
+                                 (key === 'light' && state.lightActive);
+
+                ctx.strokeStyle = isActive ? "rgba(56, 189, 248, 0.4)" : "rgba(100, 116, 139, 0.2)";
+                ctx.lineWidth = isActive ? 2 : 1;
+                ctx.beginPath();
+                ctx.moveTo(node.x, node.y);
+                ctx.lineTo(nodes.cloud.x, nodes.cloud.y);
+                ctx.stroke();
+            });
+
+            // Animasi Paket Data
+            spawnPackets();
+            state.packets.forEach((p, idx) => {
+                p.progress += 0.025;
+                const curX = p.from.x + (p.to.x - p.from.x) * p.progress;
+                const curY = p.from.y + (p.to.y - p.from.y) * p.progress;
+
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(curX, curY, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (p.progress >= 1) state.packets.splice(idx, 1);
+            });
+
+            // Gambar Cloud Server
+            ctx.fillStyle = "#1e1b4b";
+            ctx.strokeStyle = "#818cf8";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(nodes.cloud.x - 85, nodes.cloud.y - 22, 170, 44, 10);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = "#e0e7ff";
+            ctx.font = "bold 12px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("☁️ " + nodes.cloud.label, nodes.cloud.x, nodes.cloud.y + 4);
+
+            // Gambar Node Sensor
+            [
+                { node: nodes.traffic, active: state.trafficActive },
+                { node: nodes.air, active: state.airActive },
+                { node: nodes.light, active: state.lightActive }
+            ].forEach(item => {
+                ctx.fillStyle = item.active ? "#0f172a" : "#1e293b";
+                ctx.strokeStyle = item.active ? "#34d399" : "#64748b";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(item.node.x, item.node.y, 16, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = item.active ? "#34d399" : "#94a3b8";
+                ctx.beginPath();
+                ctx.arc(item.node.x, item.node.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "#cbd5e1";
+                ctx.font = "11px sans-serif";
+                ctx.fillText(item.node.label, item.node.x, item.node.y + 30);
+            });
+        }
+
+        function drawChart() {
+            chartCtx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+
+            const activeCount = [state.trafficActive, state.airActive, state.lightActive].filter(Boolean).length;
+            const baseThroughput = activeCount * 42 + (activeCount > 0 ? Math.random() * 18 : 2);
+            document.getElementById('dataRateText').innerText = `Throughput: ${baseThroughput.toFixed(1)} MB/s`;
+
+            if (Math.random() < 0.25) {
+                state.dataHistory.push(baseThroughput);
+                state.dataHistory.shift();
+            }
+
+            // Grid garis tipis
+            chartCtx.strokeStyle = "rgba(71, 85, 105, 0.3)";
+            chartCtx.lineWidth = 1;
+            for (let y = 30; y < 130; y += 30) {
+                chartCtx.beginPath();
+                chartCtx.moveTo(0, y);
+                chartCtx.lineTo(chartCanvas.width, y);
+                chartCtx.stroke();
+            }
+
+            // Garis Grafik Big Data
+            chartCtx.strokeStyle = activeCount > 0 ? "#a855f7" : "#475569";
+            chartCtx.lineWidth = 2.5;
+            chartCtx.beginPath();
+            const stepX = chartCanvas.width / (state.dataHistory.length - 1);
+            state.dataHistory.forEach((val, i) => {
+                const x = i * stepX;
+                const y = chartCanvas.height - (val / 160) * 110 - 15;
+                if (i === 0) chartCtx.moveTo(x, y);
+                else chartCtx.lineTo(x, y);
+            });
+            chartCtx.stroke();
+        }
+
+        function resetSimulation() {
+            document.getElementById('toggleTraffic').checked = false;
+            document.getElementById('toggleAir').checked = false;
+            document.getElementById('toggleLight').checked = false;
+            document.getElementById('trafficThresh').value = 80;
+            document.getElementById('airThresh').value = 180;
+            document.getElementById('lightThresh').value = 20;
+
+            state.currentMission = 1;
+            state.score = 0;
+            document.getElementById('scoreDisplay').innerText = "0 / 300";
+            document.getElementById('missionStep').innerText = "Misi 1 dari 3";
+            document.getElementById('missionTitle').innerText = "1. Kemacetan Jam Sibuk";
+            document.getElementById('missionDesc').innerHTML = `Kepadatan kendaraan meningkat drastis di persimpangan utama. Aktifkan <b>Sensor Lalu Lintas</b> dan atur batas otomatisasi lampu hijau cerdas di bawah angka <b>70%</b> agar kemacetan terurai!`;
+            document.getElementById('missionFeedback').innerText = "Status: Belum terpenuhi";
+            document.getElementById('missionFeedback').className = "text-xs font-medium text-amber-300";
+
+            updateSystem();
+        }
+
+        function loop() {
+            drawCity();
+            drawChart();
+            requestAnimationFrame(loop);
+        }
+
+        updateSystem();
+        loop();
+    </script>
+</body>
+</html>
