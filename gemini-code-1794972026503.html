@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Quiz: Sistem Komputer - Informatika Kelas X</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PeerJS untuk koneksi Real-Time P2P tanpa Backend Server -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
+        .glass {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .option-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .option-btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-4">
+
+    <!-- HEADER -->
+    <header class="w-full max-w-4xl flex items-center justify-between mb-6 px-2">
+        <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-500/30">
+                <i data-lucide="cpu" class="w-6 h-6 text-white"></i>
+            </div>
+            <div>
+                <h1 class="font-extrabold text-lg tracking-tight text-white">INFORMATIKA LIVE</h1>
+                <p class="text-xs text-indigo-300 font-medium">Materi: Sistem Komputer (Kelas X)</p>
+            </div>
+        </div>
+        <div id="connection-badge" class="hidden px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Terhubung</span>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="w-full max-w-4xl">
+
+        <!-- 1. LANDING VIEW (PILIH PERAN) -->
+        <section id="view-landing" class="glass rounded-3xl p-8 md:p-12 text-center shadow-2xl">
+            <span class="inline-block px-4 py-1.5 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold uppercase tracking-wider mb-4 border border-indigo-500/30">
+                Kurikulum Merdeka • Fase E
+            </span>
+            <h2 class="text-3xl md:text-4xl font-extrabold mb-3 text-white">Kuis Interaktif Sistem Komputer</h2>
+            <p class="text-slate-300 max-w-xl mx-auto mb-10 text-sm md:text-base">
+                Uji pemahaman tentang komponen perangkat keras (Hardware), perangkat lunak (Software), pengguna (Brainware), dan siklus pemrosesan data secara real-time.
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                <!-- Card Guru -->
+                <button onclick="initTeacherMode()" class="group glass hover:bg-indigo-600/20 border-2 border-indigo-500/30 hover:border-indigo-400 rounded-2xl p-6 text-left transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <i data-lucide="presentation" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-1">Mode Guru (Host)</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        Buat ruangan kuis baru, dapatkan kode sesi untuk siswa, dan kendalikan jalannya soal dari layar utama.
+                    </p>
+                </button>
+
+                <!-- Card Siswa -->
+                <button onclick="showStudentJoin()" class="group glass hover:bg-emerald-600/20 border-2 border-emerald-500/30 hover:border-emerald-400 rounded-2xl p-6 text-left transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <i data-lucide="smartphone" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-1">Mode Siswa (Join)</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        Masukkan kode sesi yang ditampilkan oleh guru di proyektor dan jawab soal langsung dari perangkatmu.
+                    </p>
+                </button>
+            </div>
+        </section>
+
+        <!-- 2. STUDENT JOIN FORM -->
+        <section id="view-student-join" class="hidden glass rounded-3xl p-8 max-w-md mx-auto shadow-2xl">
+            <button onclick="resetToLanding()" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 mb-6">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali
+            </button>
+            <h2 class="text-2xl font-extrabold mb-2">Gabung Sesi Kuis</h2>
+            <p class="text-xs text-slate-400 mb-6">Masukkan 5 karakter kode kelas dari guru.</p>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-300 mb-1.5">Kode Sesi</label>
+                    <input type="text" id="input-room-code" maxlength="5" placeholder="Contoh: X9K2A" 
+                        class="w-full px-4 py-3.5 rounded-xl bg-slate-900/80 border border-slate-700 text-white font-extrabold text-center text-2xl tracking-widest uppercase focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-300 mb-1.5">Nama Lengkap Siswa</label>
+                    <input type="text" id="input-student-name" maxlength="25" placeholder="Masukkan nama panggilan/lengkap" 
+                        class="w-full px-4 py-3.5 rounded-xl bg-slate-900/80 border border-slate-700 text-white font-semibold focus:outline-none focus:border-emerald-500">
+                </div>
+                <button id="btn-join-room" onclick="joinRoom()" class="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2">
+                    <span>Masuk ke Kelas</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </button>
+                <p id="join-error" class="text-xs text-rose-400 text-center hidden"></p>
+            </div>
+        </section>
+
+        <!-- 3. TEACHER LOBBY VIEW -->
+        <section id="view-teacher-lobby" class="hidden glass rounded-3xl p-8 shadow-2xl">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-slate-700/80">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Menunggu Siswa Bergabung...</span>
+                    <h2 class="text-2xl font-extrabold mt-1">Lobi Sesi Langsung</h2>
+                    <p class="text-xs text-slate-400 mt-1">Minta siswa membuka tautan GitHub ini dan memasukkan kode di samping.</p>
+                </div>
+                <div class="bg-slate-900/90 border-2 border-indigo-500 rounded-2xl px-8 py-4 text-center shadow-inner">
+                    <span class="block text-[11px] font-bold uppercase tracking-widest text-indigo-300 mb-1">KODE SESI</span>
+                    <span id="teacher-room-code" class="text-4xl md:text-5xl font-black tracking-widest text-white select-all">-----</span>
+                </div>
+            </div>
+
+            <div class="py-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-sm text-slate-300 flex items-center gap-2">
+                        <i data-lucide="users" class="w-4 h-4 text-indigo-400"></i>
+                        <span>Siswa Terhubung (<span id="student-count">0</span>)</span>
+                    </h3>
+                    <span class="text-xs text-slate-400">Total Soal: <strong class="text-white">10 Pilihan Ganda</strong></span>
+                </div>
+                <div id="lobby-student-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 min-h-[120px] p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                    <p id="empty-lobby-msg" class="col-span-full text-center text-xs text-slate-500 my-auto">Belum ada siswa yang masuk...</p>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-slate-700/80">
+                <button id="btn-start-quiz" onclick="startQuiz()" disabled class="px-8 py-4 rounded-xl bg-indigo-600 disabled:bg-slate-700 disabled:text-slate-500 hover:bg-indigo-500 font-bold text-white shadow-lg transition-all flex items-center gap-2">
+                    <i data-lucide="play" class="w-5 h-5"></i>
+                    <span>Mulai Kuis Sekarang</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- 4. STUDENT WAITING LOBBY -->
+        <section id="view-student-lobby" class="hidden glass rounded-3xl p-10 text-center max-w-md mx-auto shadow-2xl">
+            <div class="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center mx-auto mb-5">
+                <i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-400 animate-bounce"></i>
+            </div>
+            <h2 class="text-2xl font-extrabold mb-1">Kamu Sudah Masuk!</h2>
+            <p id="student-welcome-name" class="text-emerald-300 font-bold text-lg mb-4"></p>
+            <p class="text-xs text-slate-400 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                Perhatikan layar guru di depan kelas. Pertanyaan akan muncul otomatis di layarmu saat guru memulai kuis.
+            </p>
+        </section>
+
+        <!-- 5. ACTIVE QUIZ VIEW (TEACHER & STUDENT) -->
+        <section id="view-quiz" class="hidden glass rounded-3xl p-6 md:p-8 shadow-2xl">
+            <!-- Top Bar: Progress & Timer -->
+            <div class="flex items-center justify-between gap-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <span id="quiz-q-number" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 font-extrabold text-sm">Soal 1 / 10</span>
+                    <span id="quiz-category" class="hidden sm:inline-block text-xs font-semibold text-indigo-300 bg-indigo-950/80 px-3 py-1.5 rounded-lg border border-indigo-500/20">Hardware</span>
+                </div>
+                <div class="flex items-center gap-2 bg-slate-900 px-4 py-2 rounded-xl border border-slate-700">
+                    <i data-lucide="timer" class="w-4 h-4 text-amber-400"></i>
+                    <span id="quiz-timer" class="font-black text-lg text-amber-400">20</span>
+                    <span class="text-xs text-slate-400">detik</span>
+                </div>
+            </div>
+
+            <!-- Question Text -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 mb-6">
+                <h3 id="quiz-question-text" class="text-lg md:text-xl font-bold leading-relaxed text-white">
+                    Memuat pertanyaan...
+                </h3>
+            </div>
+
+            <!-- Options Grid -->
+            <div id="quiz-options-grid" class="grid md:grid-cols-2 gap-4 mb-6">
+                <!-- Diisi dinamis oleh JS -->
+            </div>
+
+            <!-- Teacher Live Answer Counter & Controls -->
+            <div id="teacher-quiz-controls" class="hidden pt-6 border-t border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="px-4 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs">
+                        Jawaban Masuk: <strong id="answers-received-count" class="text-emerald-400 text-base">0</strong> / <span id="answers-total-students">0</span>
+                    </div>
+                    <span id="teacher-answer-key-badge" class="hidden px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+                        Kunci: -
+                    </span>
+                </div>
+                <div class="flex gap-3 w-full sm:w-auto">
+                    <button id="btn-reveal-answer" onclick="revealAnswer()" class="flex-1 sm:flex-none px-5 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 font-bold text-xs text-white transition-all">
+                        Tampilkan Kunci
+                    </button>
+                    <button id="btn-next-question" onclick="nextQuestion()" class="flex-1 sm:flex-none px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-xs text-white transition-all flex items-center justify-center gap-1.5">
+                        <span>Soal Berikutnya</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Student Feedback Banner -->
+            <div id="student-feedback-banner" class="hidden p-4 rounded-2xl text-center font-bold text-sm"></div>
+        </section>
+
+        <!-- 6. LEADERBOARD / FINAL RESULT VIEW -->
+        <section id="view-leaderboard" class="hidden glass rounded-3xl p-8 shadow-2xl text-center">
+            <div class="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="trophy" class="w-8 h-8 text-amber-400"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold mb-1">Hasil Akhir Kuis</h2>
+            <p class="text-xs text-slate-400 mb-8">Peringkat berdasarkan ketepatan jawaban dan kecepatan waktu.</p>
+
+            <div id="leaderboard-list" class="max-w-xl mx-auto space-y-3 mb-8 text-left">
+                <!-- Peringkat diisi oleh JS -->
+            </div>
+
+            <button onclick="location.reload()" class="px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-sm text-white transition-all">
+                Selesai & Kembali ke Beranda
+            </button>
+        </section>
+
+    </main>
+
+    <script>
+        // ==========================================
+        // BANK SOAL SISTEM KOMPUTER KELAS X (10 SOAL)
+        // ==========================================
+        const QUESTIONS = [
+            {
+                category: "Komponen Sistem Komputer",
+                question: "Tiga komponen utama yang saling berinteraksi dalam sebuah sistem komputer agar dapat mengolah data menjadi informasi adalah...",
+                options: [
+                    "Input, Process, dan Output",
+                    "Hardware, Software, dan Brainware",
+                    "CPU, RAM, dan Harddisk",
+                    "Sistem Operasi, Aplikasi, dan Utilitas"
+                ],
+                answer: 1
+            },
+            {
+                category: "Arsitektur Komputer (CPU)",
+                question: "Bagian di dalam CPU yang bertugas melakukan operasi perhitungan aritmatika (penjumlahan, pengurangan) serta operasi logika (AND, OR, NOT) adalah...",
+                options: [
+                    "Control Unit (CU)",
+                    "Register Memory",
+                    "Arithmetic Logic Unit (ALU)",
+                    "Cache Memory L1"
+                ],
+                answer: 2
+            },
+            {
+                category: "Memori & Penyimpanan",
+                question: "Mengapa data yang sedang dikerjakan di aplikasi pengolah kata akan hilang jika listrik tiba-tiba padam sebelum disimpan?",
+                options: [
+                    "Data masih berada di RAM yang bersifat volatile (sementara)",
+                    "Harddisk gagal melakukan proses booting ulang",
+                    "ROM menghapus seluruh instruksi secara otomatis",
+                    "Control Unit memutus aliran data ke monitor"
+                ],
+                answer: 0
+            },
+            {
+                category: "Siklus Instruksi CPU",
+                question: "Urutan tahapan siklus pemrosesan instruksi mesin (Machine Cycle) yang dilakukan oleh CPU secara berurutan adalah...",
+                options: [
+                    "Execute - Decode - Fetch - Store",
+                    "Fetch - Decode - Execute - Store",
+                    "Decode - Fetch - Store - Execute",
+                    "Store - Fetch - Decode - Execute"
+                ],
+                answer: 1
+            },
+            {
+                category: "Perangkat Lunak (Software)",
+                question: "Perangkat lunak yang berfungsi sebagai jembatan penghubung antara perangkat keras (hardware) dengan perangkat lunak aplikasi serta mengelola seluruh sumber daya komputer adalah...",
+                options: [
+                    "Software Utilitas (Utility)",
+                    "Bahasa Pemrograman",
+                    "Sistem Operasi (Operating System)",
+                    "Firmware BIOS"
+                ],
+                answer: 2
+            },
+            {
+                category: "Perangkat Input/Output",
+                question: "Manakah di antara kelompok perangkat berikut yang seluruhnya berfungsi sebagai perangkat keluaran (Output Device)?",
+                options: [
+                    "Monitor, Printer, Proyektor, Speaker",
+                    "Keyboard, Scanner, Mikrofon, Mouse",
+                    "Touchscreen, Modem, Flashdisk, Webcam",
+                    "Plotter, Barcode Reader, Stylus, Headset"
+                ],
+                answer: 0
+            },
+            {
+                category: "Interaksi Hardware-Software",
+                question: "Ketika kamu mencolokkan printer baru ke laptop, sistem operasi membutuhkan perangkat lunak kecil agar dapat mengenali dan berkomunikasi dengan printer tersebut. Perangkat lunak ini disebut...",
+                options: [
+                    "Compiler",
+                    "Device Driver",
+                    "Antivirus",
+                    "Defragmenter"
+                ],
+                answer: 1
+            },
+            {
+                category: "Brainware",
+                question: "Seseorang yang bertugas merancang arsitektur sistem, menganalisis kebutuhan pengguna, dan menentukan spesifikasi perangkat lunak sebelum dibuat oleh programmer disebut...",
+                options: [
+                    "Database Administrator",
+                    "Network Engineer",
+                    "System Analyst",
+                    "Operator Komputer"
+                ],
+                answer: 2
+            },
+            {
+                category: "Sistem Bilangan & Data",
+                question: "Komputer hanya mengenali sinyal listrik hidup (ON) dan mati (OFF) yang direpresentasikan dalam sistem bilangan biner. Satu karakter huruf standar (ASCII) umumnya membutuhkan ukuran penyimpanan sebesar...",
+                options: [
+                    "1 Bit",
+                    "4 Bit (1 Nibble)",
+                    "8 Bit (1 Byte)",
+                    "1024 Byte (1 Kilobyte)"
+                ],
+                answer: 2
+            },
+            {
+                category: "Booting & Firmware",
+                question: "Program tertanam pada chip motherboard yang pertama kali berjalan saat tombol power ditekan untuk mengecek kesiapan hardware (POST) sebelum memuat sistem operasi adalah...",
+                options: [
+                    "RAM / DRAM",
+                    "BIOS / UEFI",
+                    "Task Manager",
+                    "Kernel Linux"
+                ],
+                answer: 1
+            }
+        ];
+
+        // ==========================================
+        // STATE GLOBAL
+        // ==========================================
+        let peer = null;
+        let role = null; // 'teacher' | 'student'
+        let roomCode = "";
+        let connections = []; // Untuk Guru: menyimpan koneksi siswa
+        let hostConn = null;    // Untuk Siswa: koneksi ke Guru
+        let students = {};      // { peerId: { name, score, answeredCurrent } }
+        let myName = "";
+        let myScore = 0;
+
+        let currentQIndex = 0;
+        let timerInterval = null;
+        let timeLeft = 20;
+        let questionStartTime = 0;
+        let hasAnswered = false;
+        let isRevealed = false;
+
+        const PEER_PREFIX = "INF-X-SISM-";
+
+        // Inisialisasi Ikon
+        lucide.createIcons();
+
+        function showView(viewId) {
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        function resetToLanding() {
+            if (peer) peer.destroy();
+            showView('view-landing');
+        }
+
+        // ==========================================
+        // LOGIKA MODE GURU (HOST)
+        // ==========================================
+        function generateRoomCode() {
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            let code = "";
+            for (let i = 0; i < 5; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        function initTeacherMode() {
+            role = 'teacher';
+            roomCode = generateRoomCode();
+            showView('view-teacher-lobby');
+            document.getElementById('teacher-room-code').innerText = "MEMUAT...";
+
+            peer = new Peer(PEER_PREFIX + roomCode);
+
+            peer.on('open', (id) => {
+                document.getElementById('teacher-room-code').innerText = roomCode;
+                document.getElementById('connection-badge').classList.remove('hidden');
+            });
+
+            peer.on('error', (err) => {
+                if (err.type === 'unavailable-id') {
+                    initTeacherMode(); // Buat ulang kode jika bentrok
+                } else {
+                    alert("Gagal membuat sesi: " + err.message);
+                }
+            });
+
+            peer.on('connection', (conn) => {
+                connections.push(conn);
+
+                conn.on('data', (data) => {
+                    handleTeacherData(conn, data);
+                });
+
+                conn.on('close', () => {
+                    delete students[conn.peer];
+                    connections = connections.filter(c => c.peer !== conn.peer);
+                    updateLobbyUI();
+                });
+            });
+        }
+
+        function handleTeacherData(conn, data) {
+            if (data.type === 'JOIN') {
+                students[conn.peer] = {
+                    name: data.name,
+                    score: 0,
+                    answeredCurrent: false
+                };
+                updateLobbyUI();
+                conn.send({ type: 'JOIN_SUCCESS', name: data.name });
+            } 
+            else if (data.type === 'SUBMIT_ANSWER') {
+                const student = students[conn.peer];
+                if (!student || student.answeredCurrent || isRevealed) return;
+
+                student.answeredCurrent = true;
+                const q = QUESTIONS[currentQIndex];
+                const isCorrect = (data.optionIndex === q.answer);
+
+                if (isCorrect) {
+                    // Skor dasar 600 + bonus kecepatan hingga 400
+                    const speedBonus = Math.round((timeLeft / 20) * 400);
+                    student.score += (600 + speedBonus);
+                }
+
+                conn.send({
+                    type: 'ANSWER_ACK',
+                    isCorrect: isCorrect,
+                    newScore: student.score
+                });
+
+                updateAnswerCounter();
+
+                // Jika semua siswa sudah menjawab, otomatis buka kunci
+                const totalStudents = Object.keys(students).length;
+                const answeredCount = Object.values(students).filter(s => s.answeredCurrent).length;
+                if (totalStudents > 0 && answeredCount >= totalStudents) {
+                    revealAnswer();
+                }
+            }
+        }
+
+        function updateLobbyUI() {
+            const listEl = document.getElementById('lobby-student-list');
+            const studentArr = Object.values(students);
+            document.getElementById('student-count').innerText = studentArr.length;
+
+            const startBtn = document.getElementById('btn-start-quiz');
+            startBtn.disabled = studentArr.length === 0;
+
+            if (studentArr.length === 0) {
+                listEl.innerHTML = `<p id="empty-lobby-msg" class="col-span-full text-center text-xs text-slate-500 my-auto">Belum ada siswa yang masuk...</p>`;
+                return;
+            }
+
+            listEl.innerHTML = studentArr.map(s => `
+                <div class="px-3 py-2.5 rounded-xl bg-indigo-950/80 border border-indigo-500/30 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span class="text-xs font-bold text-white truncate">${escapeHtml(s.name)}</span>
+                </div>
+            `).join('');
+        }
+
+        function broadcast(payload) {
+            connections.forEach(conn => {
+                if (conn.open) conn.send(payload);
+            });
+        }
+
+        function startQuiz() {
+            currentQIndex = 0;
+            loadQuestionForAll();
+        }
+
+        function loadQuestionForAll() {
+            isRevealed = false;
+            Object.values(students).forEach(s => s.answeredCurrent = false);
+
+            const q = QUESTIONS[currentQIndex];
+            renderQuizScreen(q, currentQIndex, true);
+
+            broadcast({
+                type: 'NEW_QUESTION',
+                qIndex: currentQIndex,
+                total: QUESTIONS.length,
+                category: q.category,
+                question: q.question,
+                options: q.options
+            });
+
+            startTimer(true);
+        }
+
+        function updateAnswerCounter() {
+            const total = Object.keys(students).length;
+            const answered = Object.values(students).filter(s => s.answeredCurrent).length;
+            document.getElementById('answers-received-count').innerText = answered;
+            document.getElementById('answers-total-students').innerText = total;
+        }
+
+        function revealAnswer() {
+            if (isRevealed) return;
+            isRevealed = true;
+            clearInterval(timerInterval);
+
+            const q = QUESTIONS[currentQIndex];
+            const letters = ['A', 'B', 'C', 'D'];
+
+            // Highlight jawaban benar di layar guru
+            const optionBtns = document.querySelectorAll('#quiz-options-grid button');
+            optionBtns.forEach((btn, idx) => {
+                if (idx === q.answer) {
+                    btn.classList.add('ring-4', 'ring-emerald-400', 'bg-emerald-900/60', 'border-emerald-400');
+                } else {
+                    btn.classList.add('opacity-40');
+                }
+            });
+
+            const keyBadge = document.getElementById('teacher-answer-key-badge');
+            keyBadge.innerText = `Kunci: ${letters[q.answer]}`;
+            keyBadge.classList.remove('hidden');
+
+            document.getElementById('btn-reveal-answer').classList.add('hidden');
+            const nextBtn = document.getElementById('btn-next-question');
+            nextBtn.querySelector('span').innerText = (currentQIndex === QUESTIONS.length - 1) ? "Lihat Peringkat Akhir" : "Soal Berikutnya";
+
+            broadcast({
+                type: 'REVEAL_ANSWER',
+                correctIndex: q.answer
+            });
+        }
+
+        function nextQuestion() {
+            if (currentQIndex < QUESTIONS.length - 1) {
+                currentQIndex++;
+                loadQuestionForAll();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function finishQuiz() {
+            clearInterval(timerInterval);
+            const sorted = Object.values(students).sort((a, b) => b.score - a.score);
+            renderLeaderboard(sorted);
+            broadcast({
+                type: 'GAME_OVER',
+                leaderboard: sorted
+            });
+        }
+
+        // ==========================================
+        // LOGIKA MODE SISWA (CLIENT)
+        // ==========================================
+        function showStudentJoin() {
+            showView('view-student-join');
+        }
+
+        function joinRoom() {
+            const codeInput = document.getElementById('input-room-code').value.trim().toUpperCase();
+            const nameInput = document.getElementById('input-student-name').value.trim();
+            const errorEl = document.getElementById('join-error');
+
+            if (codeInput.length !== 5 || !nameInput) {
+                errorEl.innerText = "Harap isi 5 karakter kode sesi dan nama lengkapmu.";
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            errorEl.classList.add('hidden');
+            const btn = document.getElementById('btn-join-room');
+            btn.disabled = true;
+            btn.innerHTML = `<span>Menghubungkan...</span>`;
+
+            role = 'student';
+            myName = nameInput;
+            peer = new Peer();
+
+            peer.on('open', () => {
+                hostConn = peer.connect(PEER_PREFIX + codeInput, { reliable: true });
+
+                hostConn.on('open', () => {
+                    hostConn.send({ type: 'JOIN', name: myName });
+                });
+
+                hostConn.on('data', (data) => {
+                    handleStudentData(data);
+                });
+
+                hostConn.on('close', () => {
+                    alert("Koneksi dengan guru terputus.");
+                    location.reload();
+                });
+
+                setTimeout(() => {
+                    if (!hostConn.open) {
+                        errorEl.innerText = "Kode sesi tidak ditemukan atau guru belum memulai lobi.";
+                        errorEl.classList.remove('hidden');
+                        btn.disabled = false;
+                        btn.innerHTML = `<span>Masuk ke Kelas</span>`;
+                    }
+                }, 6000);
+            });
+
+            peer.on('error', (err) => {
+                errorEl.innerText = "Gagal terhubung: Kode sesi tidak valid.";
+                errorEl.classList.remove('hidden');
+                btn.disabled = false;
+                btn.innerHTML = `<span>Masuk ke Kelas</span>`;
+            });
+        }
+
+        function handleStudentData(data) {
+            if (data.type === 'JOIN_SUCCESS') {
+                document.getElementById('connection-badge').classList.remove('hidden');
+                document.getElementById('student-welcome-name').innerText = data.name;
+                showView('view-student-lobby');
+            }
+            else if (data.type === 'NEW_QUESTION') {
+                hasAnswered = false;
+                renderQuizScreen(data, data.qIndex, false);
+                startTimer(false);
+            }
+            else if (data.type === 'ANSWER_ACK') {
+                myScore = data.newScore;
+                const banner = document.getElementById('student-feedback-banner');
+                banner.classList.remove('hidden', 'bg-emerald-500/20', 'text-emerald-300', 'bg-rose-500/20', 'text-rose-300');
+                banner.classList.add('bg-indigo-500/20', 'text-indigo-200', 'border', 'border-indigo-500/30');
+                banner.innerText = "Jawaban terkirim! Menunggu hasil dari guru...";
+                banner.dataset.isCorrect = data.isCorrect;
+            }
+            else if (data.type === 'REVEAL_ANSWER') {
+                clearInterval(timerInterval);
+                const optionBtns = document.querySelectorAll('#quiz-options-grid button');
+                optionBtns.forEach((btn, idx) => {
+                    btn.disabled = true;
+                    if (idx === data.correctIndex) {
+                        btn.classList.add('ring-4', 'ring-emerald-400', 'bg-emerald-900/60', 'border-emerald-400');
+                    } else {
+                        btn.classList.add('opacity-40');
+                    }
+                });
+
+                const banner = document.getElementById('student-feedback-banner');
+                banner.classList.remove('hidden', 'bg-indigo-500/20', 'text-indigo-200');
+                if (!hasAnswered) {
+                    banner.classList.add('bg-amber-500/20', 'text-amber-300', 'border', 'border-amber-500/30');
+                    banner.innerText = `Waktu Habis! Total Skormu: ${myScore}`;
+                } else if (banner.dataset.isCorrect === "true") {
+                    banner.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border', 'border-emerald-500/30');
+                    banner.innerText = `Jawaban Benar! Total Skormu: ${myScore}`;
+                } else {
+                    banner.classList.add('bg-rose-500/20', 'text-rose-300', 'border', 'border-rose-500/30');
+                    banner.innerText = `Kurang Tepat! Total Skormu: ${myScore}`;
+                }
+            }
+            else if (data.type === 'GAME_OVER') {
+                clearInterval(timerInterval);
+                renderLeaderboard(data.leaderboard);
+            }
+        }
+
+        function submitStudentAnswer(optionIndex, btnElement) {
+            if (hasAnswered || role !== 'student') return;
+            hasAnswered = true;
+
+            document.querySelectorAll('#quiz-options-grid button').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-50');
+            });
+            btnElement.classList.remove('opacity-50');
+            btnElement.classList.add('ring-4', 'ring-indigo-400', 'bg-indigo-900/70');
+
+            hostConn.send({
+                type: 'SUBMIT_ANSWER',
+                optionIndex: optionIndex
+            });
+        }
+
+        // ==========================================
+        // RENDER UI BERSAMA
+        // ==========================================
+        function renderQuizScreen(qData, qIndex, isTeacher) {
+            showView('view-quiz');
+            document.getElementById('quiz-q-number').innerText = `Soal ${qIndex + 1} / ${QUESTIONS.length}`;
+            document.getElementById('quiz-category').innerText = qData.category;
+            document.getElementById('quiz-question-text').innerText = qData.question;
+
+            const banner = document.getElementById('student-feedback-banner');
+            banner.classList.add('hidden');
+            banner.dataset.isCorrect = "false";
+
+            const letters = ['A', 'B', 'C', 'D'];
+            const colors = [
+                'hover:border-rose-400 border-rose-500/30',
+                'hover:border-sky-400 border-sky-500/30',
+                'hover:border-amber-400 border-amber-500/30',
+                'hover:border-emerald-400 border-emerald-500/30'
+            ];
+            const badgeColors = ['bg-rose-600', 'bg-sky-600', 'bg-amber-600', 'bg-emerald-600'];
+
+            const grid = document.getElementById('quiz-options-grid');
+            grid.innerHTML = qData.options.map((opt, idx) => `
+                <button ${isTeacher ? 'disabled' : `onclick="submitStudentAnswer(${idx}, this)"`} 
+                    class="option-btn text-left p-4 rounded-2xl bg-slate-900/90 border-2 ${colors[idx]} flex items-center gap-4">
+                    <span class="w-10 h-10 rounded-xl ${badgeColors[idx]} flex-shrink-0 flex items-center justify-center font-black text-white">
+                        ${letters[idx]}
+                    </span>
+                    <span class="font-semibold text-sm md:text-base text-slate-100">${escapeHtml(opt)}</span>
+                </button>
+            `).join('');
+
+            if (isTeacher) {
+                document.getElementById('teacher-quiz-controls').classList.remove('hidden');
+                document.getElementById('teacher-answer-key-badge').classList.add('hidden');
+                document.getElement
